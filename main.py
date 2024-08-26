@@ -62,6 +62,9 @@ class App:
                 del markers[key]
         self.player = entities.Player(self, player_starting_pos, [s.CELL_SIZE, s.CELL_SIZE], 'player', True)
 
+    def test_func(self):
+        self.player.take_damage(10)
+
 # ---- INIT PG
 pg.init()
 screen: pg.display = pg.display.set_mode((s.SCREEN_WIDTH, s.SCREEN_HEIGHT))
@@ -154,6 +157,9 @@ def check_inputs():
                 if app.player: app.player.jump()
             if e.key == pg.K_s:
                 app.inputs[3] = True
+
+            if e.key == pg.K_t:
+                app.test_func()
         if e.type == pg.KEYUP:
             if e.key == pg.K_a:
                 app.inputs[0] = False

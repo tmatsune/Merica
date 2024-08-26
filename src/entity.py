@@ -17,6 +17,13 @@ class Entity:
         self.max_jumps = s.DEFAULT_JUMPS
         self.jumps = s.DEFAULT_JUMPS
         self.jump_scale = s.DEFAULT_JUMP_SCALE
+        self.max_hurt_time = s.DEFAULT_HURT_TIME
+        self.max_health = s.DEFAULT_MAX_HEALTH
+        self.health = self.max_health
+        self.hurt_timer = self.max_hurt_time
+        self.knock_back = [0,0]
+
+        # ---- BOOL VARS
         self.flip = False
 
         self.animated = animated
@@ -102,7 +109,30 @@ class Entity:
         if self.jumps > 0:
             self.vel[1] = self.jump_scale
             self.jumps -= 1
-    
+
+    def state_handler(self, collisions):
+        if self.state == 'idle':
+            if self.vel[0] != 0:
+                if not collisions['down']:
+                    self.change_state('jump')
+                else:
+                    self.change_state('run')
+            elif not collisions['down']:
+                self.change_state('jump')
+        elif self.state == 'run':
+            if self.vel[0] == 0:
+                self.change_state('idle')
+            elif not collisions['down']:
+                self.change_state('jump')
+        elif self.state == 'jump':
+            if collisions['down']:
+                self.change_state('idle')
+
+    def take_damage(self, amount):
+        self.health -= amount
+        self.hurt = True
+        self.vel[0] = 0
+        self.knock_back = [8,0]
 
 class Player(Entity):
     def __init__(self, app, pos, size, type, animated=None) -> None:
@@ -117,12 +147,23 @@ class Player(Entity):
         self.vel[1] = min(10, self.vel[1] + 1)
         self.vel[0] = (self.app.inputs[1] - self.app.inputs[0]) * self.speed
 
+        self.vel[0] += self.knock_back[0]
+        self.vel[1] += self.knock_back[1]
+
+        self.knock_back[0] *= .84
+        self.knock_back[1] *= .84
+        if abs(self.knock_back[0]) < .4: self.knock_back[0] = 0
+        if abs(self.knock_back[1]) < .4: self.knock_back[1] = 0
+
         nearby_rects = self.app.tile_map.get_nearby_tiles(self.pos)
         collisions = self.movement(self.vel, nearby_rects)
         
         if collisions['down']:
             self.vel[1] = 0 
             self.jumps = self.max_jumps
+
+        self.state_handler(collisions)
+    
 
 
 
